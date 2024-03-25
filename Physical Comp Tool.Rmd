@@ -1,0 +1,476 @@
+---
+title: "Phsyical Player Comp Tool"
+author: "Anthony Rio"
+date: "9/1/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+dataset <- read.csv("Draft_Combine.csv")
+
+data_new <- na.omit(dataset[ , c(1, 4, 5, 9, 13)])
+
+player_names <- data_new[ , 1]
+data_new1 <- data_new[ , 2:5]
+```
+
+# only height, weight, wingspan, vert
+
+```{r}
+comp_tool_new <- function(height, weight, wingspan, vertical) {
+  if (!is.numeric(height) | height > 90 | height < 66) {
+    stop("Invalid height input")
+  }
+  if (!is.numeric(weight) | weight > 350 | weight < 150) {
+    stop("Invalid weight input")
+  }
+  if (!is.numeric(wingspan) | wingspan > 100 | wingspan < 66) {
+    stop("Invalid wingspan input")
+  }
+  if (!is.numeric(vertical) | vertical > 50 | vertical < 10) {
+    stop("Invalid vertical input")
+  }
+  diff <- scale(data_new1) 
+  vec <- c(height, weight, wingspan, vertical)
+  vec <- (vec - attributes(diff)$`scaled:center`) / attributes(diff)$`scaled:scale`
+  copy <- matrix(rep(vec, nrow(data_new1)), ncol = 4, byrow = TRUE)
+  diff <- diff - copy
+  dists <- apply(diff^2, 1, sum)
+  # print(sort(dists, index.return=TRUE, decreasing=FALSE)$x[1:5]) #prints dist
+  # print(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]) #indice
+  print(player_names[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5])]) # player name
+  data_new[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]), ]
+  
+}
+
+
+#how to deal with missing values
+
+comp_tool_new(84, 240, 84, 30)
+
+
+
+
+copy <- matrix(rep(c(78, 220, 79, 34), nrow(data_new1)), ncol = 4, byrow = TRUE)
+  
+diff <- scale(data_new1) 
+vec <- c(height, weight, wingspan, vertical)
+vec <- (vec - attributes(diff)$`scaled:center`) / attributes(diff)$`scaled:scale`
+copy <- matrix(rep(vec, nrow(data_new1)), ncol = 4, byrow = TRUE)
+diff <- diff - copy
+dists <- apply(diff^2, 1, sum)
+
+dists <- apply(diff^2, 1, sum)
+player_names[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5])]
+sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]
+
+as.data.frame(cbind(player_names, dists)) %>% filter(dists < 0.07)
+
+dists
+
+
+  
+  # print(sort(dists, index.return=TRUE, decreasing=FALSE)$x[1:5]) #prints dist
+  # print(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]) #indice
+  print(player_names[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5])]) # player name
+```
+
+```{r}
+## extra 
+head(dataset[ , 4:20])
+colMeans(dataset, na.rm = TRUE)
+head(dataset)
+library(dplyr)
+
+dplyr::filter(dataset, HEIGHT > 75 & HEIGHT < 78 & WEIGHT < 200) & WINGSPAN > 83)
+
+x <- c(82, 225, 23, 11, 105, 87, 9, 10, 22, 24, 12.25, 3, 3, NA, 1, 80, 130, 130)
+x1 <- c(82, 225, 23, 11, 105, 87, 9, 10)
+#y <- dataset[1, 4:21]
+dist_list <- c()
+comp_tool <- function(x, full = FALSE) {
+  height <- x[1]
+  weight <- x[2]
+  if (!full & length(x) != 8) {
+    stop("Wrong length. Must have 8 values.")
+  }
+  if (!full & length(x) == 8) {
+    k <- 11
+  }
+  if (full & length(x) != 18) {
+    stop("Wrong length. Must have 18 values.")
+  }
+  if (full & length(x) == 18) {
+    k <- 21
+  }
+  if (sum(is.na(x)) > 5) {
+    stop("Too many NAs. Need more information.")
+  }
+  if (is.na(height) | is.na(weight)) {
+    stop("Need both height and weight.")
+  }
+  dataset1 <- dataset %>% filter(abs(HEIGHT- height) <= 3)
+  dataset1 <- dataset1 %>% filter(abs(WEIGHT- weight) <= 15)
+  for (i in 1:nrow(dataset1)) {
+    y <- dataset1[i, 4:k]
+    z <- (x-y)
+    dist <- sum((x-y)^2, na.rm = TRUE)
+    dist_list <- c(dist_list, dist)
+    #create guard rail for too many NAs 
+    #maybe # of NAs?
+  }
+  sort(dist_list, index.return=TRUE, decreasing=TRUE)$x[1:5] # dist
+  sort(dist_list, index.return=TRUE, decreasing=TRUE)$ix[1:5] #indice
+  dataset1[c(sort(dist_list, index.return=TRUE, decreasing=FALSE)$ix[1:5]), 1] # player name
+}
+
+#how to deal with missing values
+
+comp_tool(x1)
+
+
+
+#turn into shiny app
+```
+
+
+
+
+```{r}
+#neural network NBA draft model 
+```
+
+
+```{r}
+comp_tool1 <- function(x, full = FALSE) {
+  height <- x[1]
+  weight <- x[2]
+  if (!full & length(x) != 8) {
+    stop("Wrong length. Must have 8 values.")
+  }
+  if (!full & length(x) == 8) {
+    k <- 11
+  }
+  if (full & length(x) != 18) {
+    stop("Wrong length. Must have 18 values.")
+  }
+  if (full & length(x) == 18) {
+    k <- 21
+  }
+  if (sum(is.na(x)) > 5) {
+    stop("Too many NAs. Need more information.")
+  }
+  if (is.na(height) | is.na(weight)) {
+    stop("Need both height and weight.")
+  }
+  dataset1 <- dataset %>% filter(abs(HEIGHT- height) <= 3)
+  dataset1 <- dataset1 %>% filter(abs(WEIGHT- weight) <= 15)
+  y <- matrix(rep(x, nrow(dataset1)), ncol = k - 3, byrow = TRUE)
+  dataset1_mat <- as.matrix(dataset1[ , 4:k])
+  diff <- dataset1_mat - y
+  dists <- apply(diff^2, 1, sum)
+  #sort(dists, index.return=TRUE, decreasing=TRUE)$x[1:5] # dist
+  #sort(dists, index.return=TRUE, decreasing=TRUE)$ix[1:5] #indice
+  dataset1[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]), 1] # player name
+}
+
+comp_tool1(x1)
+```
+
+
+## Version 3
+```{r}
+comp_tool1 <- function(x, full = FALSE) {
+  height <- x[1]
+  weight <- x[2]
+  if (!full & length(x) != 8) {
+    stop("Wrong length. Must have 8 values.")
+  }
+  if (!full & length(x) == 8) {
+    k <- 11
+  }
+  if (full & length(x) != 18) {
+    stop("Wrong length. Must have 18 values.")
+  }
+  if (full & length(x) == 18) {
+    k <- 21
+  }
+  if (sum(is.na(x)) > 5) {
+    stop("Too many NAs. Need more information.")
+  }
+  if (is.na(height) | is.na(weight)) {
+    stop("Need both height and weight.")
+  }
+  dataset1 <- dataset %>% filter(abs(HEIGHT- height) <= 3)
+  dataset1 <- dataset1 %>% filter(abs(WEIGHT- weight) <= 15)
+  not_done <- TRUE
+  y <- matrix(rep(x, nrow(dataset1)), ncol = k - 3, byrow = TRUE)
+  dataset1_mat <- as.matrix(dataset1[ , 4:k])
+  n <- 1
+  while(not_done) {
+    diff <- dataset1_mat - y
+    dists <- apply(diff^2, 1, sum)
+    #best iter
+    best_it <- sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1]
+    #matrix taking out columns that were NA in best iter
+    diff2 <- dataset1_mat[ , !c(is.na(dataset1_mat[best_it, ]))] - y[ , !c(is.na(dataset1_mat[best_it, ]))]
+    #find euclidian dists when col(s) are taken out
+    dists2 <- apply(diff2^2, 1, sum)
+    #if bests its match, then end while loop
+    if (best_it == sort(dists2, index.return=TRUE, decreasing=FALSE)$ix[1]) {
+      not_done <- FALSE
+    } else {
+      #else get rid of best it from dataset1_mat
+      dataset1_mat <- dataset1_mat[-best_it , ]
+      dataset1 <- dataset1[-best_it , ]
+      n <- n + 1
+    }
+  }
+  #sort(dists, index.return=TRUE, decreasing=FALSE)$x[1:5] # dist
+  #sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5] #indice
+  print(n)
+  dataset1[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]), 1] # player name
+}
+
+
+comp_tool1(x1)
+
+#scale(matrix(c(NA, 2:4), nrow = 2))
+```
+
+## Version 3a
+```{r}
+
+x1 <- c(77, 185, 84, 38)
+
+comp_tool1 <- function(x, nent) {
+  height <- x[1]
+  weight <- x[2]
+  if (nent != length(x)) {
+    stop("Wrong length. Must have same number of values.")
+  }
+  k <- nent + 3
+  if (sum(is.na(x)) > 5) {
+    stop("Too many NAs. Need more information.")
+  }
+  if (is.na(height) | is.na(weight)) {
+    stop("Need both height and weight.")
+  }
+  dataset1 <- dataset %>% filter(abs(HEIGHT- height) <= 3)
+  dataset1 <- dataset1 %>% filter(abs(WEIGHT- weight) <= 15)
+  not_done <- TRUE
+  y <- matrix(rep(x, nrow(dataset1)), ncol = nent, byrow = TRUE)
+  if (nent == 4) {
+    dataset1_mat <- as.matrix(dataset1[ , c(4, 5, 9, 13)])
+  } else {
+    dataset1_mat <- as.matrix(dataset1[ , 4:(nent + 3)])
+  }
+  n <- 1
+  while(not_done) {
+    diff <- dataset1_mat - y
+    dists <- apply(diff^2, 1, sum)
+    #best iter
+    best_it <- sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1]
+    #matrix taking out columns that were NA in best iter
+    diff2 <- dataset1_mat[ , !c(is.na(dataset1_mat[best_it, ]))] - y[ , !c(is.na(dataset1_mat[best_it, ]))]
+    #find euclidian dists when col(s) are taken out
+    dists2 <- apply(diff2^2, 1, sum)
+    #if bests its match, then end while loop
+    if (best_it == sort(dists2, index.return=TRUE, decreasing=FALSE)$ix[1]) {
+      not_done <- FALSE
+    } else {
+      #else get rid of best it from dataset1_mat
+      dataset1_mat <- dataset1_mat[-best_it , ]
+      dataset1 <- dataset1[-best_it , ]
+      n <- n + 1
+    }
+  }
+  #sort(dists, index.return=TRUE, decreasing=FALSE)$x[1:5] # dist
+  #sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5] #indice
+  print(n)
+  dataset1[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]), 1] # player name
+}
+
+
+comp_tool1(x1, nent = 4)
+
+
+
+#scale(matrix(c(NA, 2:4), nrow = 2))
+```
+
+
+
+```{r}
+
+normalize_matrix <- function(mat) {
+  means <- colMeans(mat, na.rm = TRUE)
+  sds <- sqrt(colMeans((mat - matrix(means, nrow = nrow(mat), ncol = ncol(mat), byrow = TRUE))^2, na.rm = TRUE))
+  (mat - matrix(means, nrow = nrow(mat), ncol = ncol(mat), byrow = TRUE)) / matrix(sds, nrow = nrow(mat), ncol = ncol(mat), byrow = TRUE)
+}
+
+a <- matrix(c(NA, 2:9), nrow = 3)
+
+normalize_matrix(a)
+
+```
+
+
+#version 3 with scaled data
+```{r}
+
+comp_tool2 <- function(x, full = FALSE) {
+  height <- x[1]
+  weight <- x[2]
+  if (!full & length(x) != 8) {
+    stop("Wrong length. Must have 8 values.")
+  }
+  if (!full & length(x) == 8) {
+    k <- 11
+  }
+  if (full & length(x) != 18) {
+    stop("Wrong length. Must have 18 values.")
+  }
+  if (full & length(x) == 18) {
+    k <- 21
+  }
+  if (sum(is.na(x)) > 5) {
+    stop("Too many NAs. Need more information.")
+  }
+  if (is.na(height) | is.na(weight)) {
+    stop("Need both height and weight.")
+  }
+  dataset1 <- dataset %>% filter(abs(HEIGHT- height) <= 3)
+  dataset1 <- dataset1 %>% filter(abs(WEIGHT- weight) <= 15)
+  not_done <- TRUE
+  y <- matrix(rep(x, nrow(dataset1)), ncol = k - 3, byrow = TRUE)
+  dataset1_mat <- as.matrix(dataset1[ , 4:k])
+  n <- 1
+  while(not_done) {
+    diff <- normalize_matrix(dataset1_mat - y)
+    dists <- apply(diff^2, 1, sum)
+    #best iter
+    best_it <- sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1]
+    #matrix taking out columns that were NA in best iter
+    diff2 <- normalize_matrix(dataset1_mat[ , !c(is.na(dataset1_mat[best_it, ]))] - y[ , !c(is.na(dataset1_mat[best_it, ]))])
+    #find euclidian dists when col(s) are taken out
+    dists2 <- apply(diff2^2, 1, sum)
+    #if bests its match, then end while loop
+    if (best_it == sort(dists2, index.return=TRUE, decreasing=FALSE)$ix[1]) {
+      not_done <- FALSE
+    } else {
+      #else get rid of best iter from dataset1_mat
+      dataset1_mat <- dataset1_mat[-best_it , ]
+      dataset1 <- dataset1[-best_it , ]
+      n <- n + 1
+    }
+  }
+  #sort(dists, index.return=TRUE, decreasing=FALSE)$x[1:5] # dist
+  #sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5] #indice
+  print(n)
+  dataset1[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]), 1] # player name
+}
+
+x1 <- 
+#head(dataset)
+comp_tool2(x1)
+
+# weights <- ifelse(k == 11, matrix(rep(c(0.3, 0.2, 0.05, 0.05, 0.1, 0.2, 0.05, 0.05), nrow(diff)), nrow = nrow(diff), byrow = TRUE), matrix(rep(c(0.15, 0.1, 0.025, 0.025, 0.05, 0.1, 0.025, 0.025, 0.02, 0.2, 0.07, 0.07, 0.07, 0.01, 0.015, 0.015, 0.015, 0.015), nrow(diff)), nrow = nrow(diff), byrow = TRUE))
+```
+
+
+## With weights used
+
+```{r}
+
+
+comp_tool3 <- function(x, full = FALSE) {
+  height <- x[1]
+  weight <- x[2]
+  if (!full & length(x) != 8) {
+    stop("Wrong length. Must have 8 values.")
+  }
+  if (!full & length(x) == 8) {
+    k <- 11
+  }
+  if (full & length(x) != 18) {
+    stop("Wrong length. Must have 18 values.")
+  }
+  if (full & length(x) == 18) {
+    k <- 21
+  }
+  if (sum(is.na(x)) > 5) {
+    stop("Too many NAs. Need more information.")
+  }
+  if (is.na(height) | is.na(weight)) {
+    stop("Need both height and weight.")
+  }
+  dataset1 <- dataset %>% filter(abs(HEIGHT- height) <= 3)
+  dataset1 <- dataset1 %>% filter(abs(WEIGHT- weight) <= 15)
+  not_done <- TRUE
+  y <- matrix(rep(x, nrow(dataset1)), ncol = k - 3, byrow = TRUE)
+  dataset1_mat <- as.matrix(dataset1[ , 4:k])
+  n <- 1
+  while(not_done) {
+    diff <- normalize_matrix(dataset1_mat - y)
+    #set weights
+    if (k == 11) {
+      weights <- matrix(rep(c(0.4, 0.4, 0.05, 0.05, 0.1, 0.2, 0.05, 0.05), nrow(diff)), ncol = k - 3, byrow = TRUE)
+    } else {
+      weights <- matrix(rep(c(0.15, 0.1, 0.025, 0.025, 0.05, 0.1, 0.025, 0.025, 0.02, 0.2, 0.07, 0.07, 0.07, 0.01, 0.015, 0.015, 0.015, 0.015), nrow(diff)), ncol = k - 3, byrow = TRUE)
+    }
+    diff <- diff * weights
+    dists <- apply(diff^2, 1, sum)
+    #best iter
+    best_it <- sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1]
+    #matrix taking out columns that were NA in best iter
+    diff2 <- normalize_matrix(dataset1_mat[ , !c(is.na(dataset1_mat[best_it, ]))] - y[ , !c(is.na(dataset1_mat[best_it, ]))])
+    #set weights2
+    if (k == 11) {
+      weights2 <- matrix(rep(c(0.3, 0.2, 0.05, 0.05, 0.1, 0.2, 0.05, 0.05), nrow(diff2)), ncol = k - 3, byrow = TRUE)
+    } else {
+      weights2 <- matrix(rep(c(0.15, 0.1, 0.025, 0.025, 0.05, 0.1, 0.025, 0.025, 0.02, 0.2, 0.07, 0.07, 0.07, 0.01, 0.015, 0.015, 0.015, 0.015), nrow(diff2)), ncol = k - 3, byrow = TRUE)
+    }
+    #only keep cols of weights2 that we want
+    weights2 <- weights2[ , !c(is.na(dataset1_mat[best_it, ]))]
+    diff2 <- diff2 * weights2
+    #find euclidian dists when col(s) are taken out
+    dists2 <- apply(diff2^2, 1, sum)
+    #if bests its match, then end while loop
+    if (best_it == sort(dists2, index.return=TRUE, decreasing=FALSE)$ix[1]) {
+      not_done <- FALSE
+    } else {
+      #else get rid of best it from dataset1_mat
+      dataset1_mat <- dataset1_mat[-best_it , ]
+      dataset1 <- dataset1[-best_it , ]
+      n <- n + 1
+    }
+  }
+  #sort(dists, index.return=TRUE, decreasing=FALSE)$x[1:5] # dist
+  #sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5] #indice
+  print(n)
+  dataset1[c(sort(dists, index.return=TRUE, decreasing=FALSE)$ix[1:5]), 1] # player name
+}
+
+
+
+
+
+
+comp_tool3(x2)
+head(dataset)
+
+
+
+x1 <- c(81.25, 230.8,	24.58, 8.9, 110.5, 85.75, 8.75, 9.5)
+x2 <- c(76, 195, 23.71, 6.1, 102.5, 82.00, 8.5,	9.8)
+```
+
+
+
+
