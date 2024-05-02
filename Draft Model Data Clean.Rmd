@@ -1,0 +1,160 @@
+---
+title: "Pre Draft Data Clean"
+author: "Anthony Rio"
+date: "9/25/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Clean Data
+
+```{r}
+data <- read.csv("Draft_Year_Data.csv")
+data <- read.csv("Draft_year_data_2023_1.csv")
+data <- data[ , -4]
+
+head(data)
+
+library(tidyverse)
+
+data <- separate(data, col = "Player", into = c("Player", "num"), sep = " \\(")
+data$num <- as.numeric(substr(data$num, 1, 2))
+
+# data %>% filter(Player == "Doug McDermott")
+
+data <- data %>% arrange(desc(num))
+data <- data %>% distinct(Player, .keep_all = TRUE)
+```
+
+```{r}
+
+head(data)
+
+#fix CONF
+for (i in 1:nrow(data)) {
+  if (data$Conf[i] == "ACC" | data$Conf[i] == "B12" | data$Conf[i] == "P12" | data$Conf[i] == "SEC" | data$Conf[i] == "B10" | data$Conf[i] == "BE") {
+    data$Conf[i] <- 1
+    } else {
+      data$Conf[i] <- 0
+    }
+}
+
+#vectorized
+
+# ifelse(data$Conf[i] == "ACC" | data$Conf[i] == "B12" | data$Conf[i] == "P12" | data$Conf[i] == "SEC" | data$Conf[i] == "B10" | data$Conf[i] == "BE", 1, 0)
+data$Conf <- as.numeric(data$Conf)
+
+#fix height
+for (i in 1:nrow(data)) {
+  data$Height[i] <- as.numeric(str_split(data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(data$Height[i], "-")[[1]][2])
+}
+
+data$Height <- as.numeric(data$Height)
+
+colnames(data)
+
+colnames(train_data)
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(data)) {
+  data$Dunks[i] <- as.numeric(str_split(data$Dunks[i], "-")[[1]][1])
+  data$C2M[i] <- as.numeric(str_split(data$C2M[i], "-")[[1]][1])
+  data$FTM[i] <- as.numeric(str_split(data$FTM[i], "-")[[1]][1])
+  data$F2M[i] <- as.numeric(str_split(data$F2M[i], "-")[[1]][1])
+  data$X2PM.[i] <- as.numeric(str_split(data$X2PM.[i], "-")[[1]][1])
+  data$X3PM.[i] <- as.numeric(str_split(data$X3PM.[i], "-")[[1]][1])
+}
+
+data$Height <- as.numeric(data$Height)
+data$Dunks <- as.numeric(data$Dunks)
+data$C2M <- as.numeric(data$C2M)
+data$F2M <- as.numeric(data$F2M)
+data$FTM <- as.numeric(data$FTM)
+data$X2PM. <- as.numeric(data$X2PM.)
+data$X3PM. <- as.numeric(data$X3PM.)
+
+head(data)
+
+write.csv(data, file = "predraft_data_2023.csv")
+
+colnames(mdata)[1:33] <- colnames(data)[1:33]
+data %>% group_by(player)
+mdata <- merge(data, war_sum, by = "Player")
+
+write.csv(mdata, file = "mdata.csv")
+
+mdata <- read.csv("mdata.csv")
+head(data)
+
+for (i in 1: nrow(data)) {
+  if (data$Class[i] == "Sr") {
+    data$Class[i] <- 4
+  } else if (data$Class[i] == "Jr") {
+    data$Class[i] <- 3
+  } else if (data$Class[i] == "So") {
+    data$Class[i] <- 2
+  } else if (data$Class[i] == "Fr") {
+    data$Class[i] <- 1
+  }
+}
+data$Class <- as.numeric(data$Class)
+
+head(data)
+mdata <- mdata[ , -7]
+
+data <- data[ , c(2, 5, 6, 9:39, 41)]
+write.csv(mdata, file = "mdata.csv")
+write.csv(data, file = "predraft_data_2023.csv")
+
+data <- read.csv()
+data
+colnames(mdata)[1:33] <- colnames(data)[1:33]
+
+data <- data[ , -4]
+
+
+```
+
+## Other Dataset
+
+```{r}
+raptor_data <- read.csv("raptortest.csv")
+raptor_data2 <- read.csv("raptortrain.csv")
+
+raptor_data <- rbind(raptor_data, raptor_data2)
+
+head(rds)
+
+rds <- raptor_data[ , c(2:4, 9:10)]
+
+rds$season_x <- as.numeric(rds$season_x)
+
+rds <- rds %>%
+  group_by(player_name_x, season_x) %>% distinct()
+
+rds %>% filter(player_name_x == "Andre Iguodala")
+
+unique(rds$season_x)
+
+#filter dataset to get only output variable of war / raptor
+rds <- rds %>%
+  group_by(player_name_x) %>%
+  slice_min(season_x, n = 5)
+
+# rap_sum <- rds %>% group_by(player_name_x) %>% summarize(total_rap = sum(raptor_total_x))
+
+war_sum <- rds %>%
+  group_by(player_name_x) %>%
+  summarize(total_war = sum(war_total_x))
+
+colnames(war_sum)[1] <- "Player"
+
+war_sum
+
+
+write.csv(war_sum, file = "war_sum.csv")
+```
+
+

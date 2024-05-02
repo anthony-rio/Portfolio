@@ -1,0 +1,566 @@
+---
+title: "Draft_Model"
+author: "Anthony Rio"
+date: "2023-03-29"
+output:
+  html_document: default
+  pdf_document: default
+  always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Freshman Model
+```{r, include=FALSE}
+#load libraries
+library(stringr)
+library(DT)
+library(tidyverse)
+```
+
+```{r, include=FALSE}
+train_data <- read.csv("Freshman_Data_Train.csv")
+train_data <- read.csv("Freshman_Game_Data.csv")
+
+train_data <- train_data[ , -4]
+colnames(train_data)[c(4, 32, 35)] <- c("CONF", "X2PM", "X3PM")
+head(train_data)
+
+
+#fix CONF
+for (i in 1:nrow(train_data)) {
+  if (train_data$CONF[i] == "ACC" | train_data$CONF[i] == "B12" | train_data$CONF[i] == "P12" | train_data$CONF[i] == "SEC" | train_data$CONF[i] == "B10" | train_data$CONF[i] == "BE") {
+    train_data$CONF[i] <- 1
+    } else {
+      train_data$CONF[i] <- 0
+    }
+}
+train_data$CONF <- as.numeric(train_data$CONF)
+
+
+#fix height
+for (i in 1:nrow(train_data)) {
+  train_data$Height[i] <- as.numeric(str_split(train_data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(train_data$Height[i], "-")[[1]][2])
+}
+
+
+
+colnames(train_data)
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(train_data)) {
+  train_data$Dunks[i] <- as.numeric(str_split(train_data$Dunks[i], "-")[[1]][1])
+  train_data$C2M[i] <- as.numeric(str_split(train_data$C2M[i], "-")[[1]][1])
+  train_data$FTM[i] <- as.numeric(str_split(train_data$FTM[i], "-")[[1]][1])
+  train_data$F2M[i] <- as.numeric(str_split(train_data$F2M[i], "-")[[1]][1])
+  train_data$X2PM[i] <- as.numeric(str_split(train_data$X2PM[i], "-")[[1]][1])
+  train_data$X3PM[i] <- as.numeric(str_split(train_data$X3PM[i], "-")[[1]][1])
+}
+
+
+#fix drafted
+train_data$drafted <- train_data$Pick
+
+for (i in 1:nrow(train_data)) {
+  if (train_data$drafted[i] == "-") {
+    train_data$drafted[i] <- 0
+  } else {
+    train_data$drafted[i] <- 1
+  }
+}
+train_data$drafted <- as.numeric(train_data$drafted)
+train_data$Height <- as.numeric(train_data$Height)
+train_data$Dunks <- as.numeric(train_data$Dunks)
+train_data$C2M <- as.numeric(train_data$C2M)
+train_data$F2M <- as.numeric(train_data$F2M)
+train_data$FTM <- as.numeric(train_data$FTM)
+train_data$X2PM <- as.numeric(train_data$X2PM)
+train_data$X3PM <- as.numeric(train_data$X3PM)
+
+train_data$Dunks <- train_data$Dunks * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$C2M <- train_data$C2M * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$F2M <- train_data$F2M * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$FTM <- train_data$FTM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$X2PM <- train_data$X2PM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$X3PM <- train_data$X3PM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+
+#C2M, F2M, Dunks, FTM, X3PR, X2PR
+
+train_data <- train_data %>% filter(Year > 2009)
+
+head(train_data)
+nrow(train_data)
+```
+
+### Model
+```{r}
+log_model <- glm(drafted ~ Height + CONF + MIN + PRPG + DPRPG + BPM + OBPM + DBPM + ORTG + D.RTG + USG + EFG + TS + FC + OR + DR + AST + TO + BLK + STL + FTR + C2P + F2P + FTP + X2PP + X3PR + X3PP + Dunks + F2M + C2M + X3PM + FTM + X2PM, data = train_data, family = "binomial")
+# took out dunks + Dunks, F2M, C2M, X3PM., + FTM, X2PM.
+```
+
+
+```{r, include=FALSE}
+test_data <- read.csv("Freshman_2024_Data.csv")
+
+colnames(test_data)[c(3, 31, 34)] <- c("CONF", "X2PM", "X3PM")
+head(test_data)
+
+
+
+#fix CONF
+for (i in 1:nrow(test_data)) {
+  if (test_data$CONF[i] == "ACC" | test_data$CONF[i] == "B12" | test_data$CONF[i] == "P12" | test_data$CONF[i] == "SEC" | test_data$CONF[i] == "B10" | test_data$CONF[i] == "BE") {
+    test_data$CONF[i] <- 1
+    } else {
+      test_data$CONF[i] <- 0
+    }
+}
+test_data$CONF <- as.numeric(test_data$CONF)
+
+
+
+#fix height
+for (i in 1:nrow(test_data)) {
+  test_data$Height[i] <- as.numeric(str_split(test_data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(test_data$Height[i], "-")[[1]][2])
+}
+
+
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(test_data)) {
+  test_data$Dunks[i] <- as.numeric(str_split(test_data$Dunks[i], "-")[[1]][1])
+  test_data$C2M[i] <- as.numeric(str_split(test_data$C2M[i], "-")[[1]][1])
+  test_data$FTM[i] <- as.numeric(str_split(test_data$FTM[i], "-")[[1]][1])
+  test_data$F2M[i] <- as.numeric(str_split(test_data$F2M[i], "-")[[1]][1])
+  test_data$X2PM[i] <- as.numeric(str_split(test_data$X2PM[i], "-")[[1]][1])
+  test_data$X3PM[i] <- as.numeric(str_split(test_data$X3PM[i], "-")[[1]][1])
+}
+
+test_data$Height <- as.numeric(test_data$Height)
+test_data$Dunks <- as.numeric(test_data$Dunks)
+test_data$C2M <- as.numeric(test_data$C2M)
+test_data$F2M <- as.numeric(test_data$F2M)
+test_data$FTM <- as.numeric(test_data$FTM)
+test_data$X2PM <- as.numeric(test_data$X2PM)
+test_data$X3PM <- as.numeric(test_data$X3PM)
+
+test_data$Dunks <- test_data$Dunks * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$C2M <- test_data$C2M * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$F2M <- test_data$F2M * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$FTM <- test_data$FTM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$X2PM <- test_data$X2PM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$X3PM <- test_data$X3PM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+
+
+X_test <- test_data[ , c('Height', 'CONF', 'MIN', 'PRPG', 'DPRPG', 'BPM', 'OBPM', 'DBPM', 'ORTG', 'D.RTG', 'USG', 'EFG', 'TS', 'FC', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'F2P', 'FTP', 'X2PP', 'X3PR', 'X3PP', 'Dunks', 'F2M', 'C2M', 'X3PM', 'FTM', 'X2PM')]
+
+
+
+# X_train <- train_data[ , c('Height', 'CONF', 'MIN', 'PRPG', 'DPRPG', 'BPM', 'OBPM', 'DBPM', 'ORTG', 'D.RTG', 'USG', 'EFG', 'TS', 'FC', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'F2P', 'FTP', 'X2PP', 'X3PR', 'X3PP', 'Dunks', 'F2M', 'C2M', 'X3PM', 'FTM', 'X2PM')]
+
+# Y_train <- train_data[ , 'drafted']
+```
+
+```{r, include=FALSE}
+result <- data.frame("Player" = test_data$Player, "prediction" = as.numeric(predict(log_model, X_test, type = "response") > 0.5))
+
+drafted <- result[result$prediction == 1, ]
+
+result_raw <- data.frame("Player" = test_data$Player, "prediction" = predict(log_model, X_test, type = "response"))
+
+just_missed <- result_raw %>% filter(prediction > 0.2 & prediction < 0.5)
+
+library(dplyr)
+
+raw <- result_raw %>% arrange(desc(prediction)) %>% head(50)
+
+datatable(drafted)
+datatable(just_missed)
+```
+
+## Purpose of the Model and Types of Models
+The model was made with the purpose of finding which players will be drafted eventually, whether that's after one year or four years, based on their freshman data. Logistic regression was the method used for the initial model, and it outputs a value between 0 and 1. Any value above 0.5 is classified as a 1 (will be drafted), while anything below 0.5 is a won't be drafted prediction. However, it is can be useful to look at some of the values just below 0.5 too, as some of the players who just missed being classified as being drafted may very well have an intriguing profile. 
+After using a logistic regression model, I tried a regularized logistic regression model (code in python) and this model performed the worst as it predicted far too many players to be drafted. The initial logistic regression model yielded 22 players to be predicted to be drafted, which was probably the best. However, this model predicted a couple of players who are a stretch to be drafted at some point because they lack NBA physical tools. The final two models, were more selective than the other two models, as the xgboost and random forest models predicted 17 and 15 freshmen to be drafted, respectively. This is a bit of an under-estimate, however all the players they projected to be selected are pretty much draft-locks. Overall, based on performance the best model was the logistic regression model, followed by the xgboost and random forest models, with the regularized logistic regression model finishing at a distant last place. 
+
+## Model Background
+The data used to train the model was data from the 2009-10 to 2019-20 college seasons, with only freshman who had played at least 40% of their team's minutes. This dataset had almost 4,000 entries and there were 29 features used. The test data was from the current 2022-23 season with all the same features as the training data, but with only about 250 observations. Specifically, the features were: "Height", "CONF", "MIN." "PRPG.", "BPM", "ORTG", "D.RTG", "USG", "EFG",  "TS", "OR", "DR", "AST", "TO", "BLK", "STL", "FTR", "Dunks", "C2M", "C2P", "F2M", "F2P", "FTM", "FTP", "X2PM.", "X2PP", "X3PR", "X3PM.", and "X3PP". 
+
+## Variable Explanations
+Height is measured in the unit of inches. CONF is a binary variable where 1 represents they player being in a P6 conference, and 0 being a non-P6 conference. MIN. is the percentage of their teams minutes a player was on the floor. BPM and PRPG are catch-all created metrics. ORTG and DRTG are individual adjusted offensive and defensive ratings. OR, DR, AST, TO, BLK, and STL are all rates. FTR is free throw rate, while FTM is free throws made and FTP is free throw %. F2 represents far twos (beyond 17 feet), C2 represents close twos (within 5 feet of the basket), X2P represents all twos, X3P represents all threes, and all of these types of shots have stat names following the convention of ending in R (rate), P (percentage), or/and M (made). 
+
+## Final Notes and Takeaways
+My biggest takeaway on this modelling project was that there are many pieces of data that I wasn't able to put into the models. The biggest piece being player athleticism, which is hard to measure as there's no combine for college players. Other measureable data such as weight and wingspan were not included either and could have helped. More insightful data would help improve model performance, but it is hard to access. 
+
+
+## Table with Logistic Regression Model's Most Likely Drafted Freshman
+```{r}
+datatable(raw)
+```
+## Tables with Players Predicted to be Drafted Using Logistic Regression
+```{r}
+datatable(drafted)
+```
+
+
+```{r, include = FALSE}
+
+library(caret)
+library(cli)
+library(dplyr)
+library(e1071)
+library(ggplot2)
+library(glmnet)
+library(pROC)
+library(ranger)
+library(rpart)
+library(xgboost)
+library(missRanger)
+library(stringr)
+library(rlang)
+
+devtools::install_github("aaamini/quickml")
+library(quickml)
+library(mlbench)
+
+```
+## Using quickml package to check performance of different types of models
+```{r, include=FALSE}
+res <- quickml(X_train, Y_train)
+```
+```{r}
+#mean auc for decision tree
+res %>% filter(method == "dt") %>% select(auc) %>% sum() / 16
+
+#mean auc for xg boost
+res %>% filter(method == "xgb") %>% select(auc) %>% sum() / 16
+
+#mean auc for random forest
+res %>% filter(method == "rf") %>% select(auc) %>% sum() / 16
+
+#mean auc for regularized logistic regression
+res %>% filter(method == "rlr") %>% select(auc) %>% sum() / 16
+
+#mean auc for kernel SVM
+res %>% filter(method == "ksvm") %>% select(auc) %>% sum() / 16
+```
+Using quickml to run thorugh different alternative modelling possibilities, the average AUC values for the random forest and xgboost models were the best, so I will try using them below. When RSCI data was added this remained true.
+
+
+## XGBoost Model 
+```{r, include = FALSE}
+#xgboost
+#load packages
+library(xgboost)
+library(readr)
+library(stringr)
+library(caret)
+library(car)
+
+
+#tune and run model
+xgb <- xgboost(data = as.matrix(X_train), label = as.matrix(Y_train), eta = 0.1, nrounds = 100)
+
+y_pred <- predict(xgb, as.matrix(X_test))
+
+#players predicted to be drafted
+datatable(data.frame("Player" = test_data$Player, "prediction" = ifelse(y_pred > 0.5, 1, 0)))
+```
+
+Below are the names of the players predicted to be drafted using the xgboost model.
+```{r}
+test_data$Player[ifelse(y_pred > 0.5, 1, 0) == 1]
+```
+
+
+## Random Forest Model
+```{r, include = FALSE}
+
+library(randomForest)
+set.seed(71)
+rf_data <- cbind(X_train, Y_train)
+rf <-randomForest(Y_train~., data = rf_data, ntree = 250) 
+y_preds_rf <- predict(rf, X_test)
+datatable(data.frame("Player" = test_data$Player, "prediction" = ifelse(y_preds_rf > 0.5, 1, 0)))
+```
+
+Below are the names of the players predicted to be drafted using the random forest model. 
+```{r}
+test_data$Player[ifelse(y_preds_rf > 0.5, 1, 0) == 1]
+```
+
+```{r}
+library(rvest)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+
+head(train_data)
+
+train_data$SOS <- -1
+train_data$RSCI <- -1
+train_data$Weight <- -1
+
+n <- 1
+name <- tolower(str_split(train_data$Player[11], "\\(")[[1]][1])
+name <- substr(name, 1, nchar(name) - 1)
+name <- chartr(" ", "-", name)
+name <- gsub("\\'", "", "d'eangelo")
+gsub()
+
+if (grepl("-ii", name)) {
+   name <- gsub("-ii", "ii", name)
+   name <- gsub("-iii", "iii", name)
+}
+year <- substr(str_split(train_data$Player[11], "\\(")[[1]][2], 1, 2)
+link <- paste0("https://www.sports-reference.com/cbb/players/", name, "-", n, ".html")
+page <- read_html(link)
+year1 <- page %>% html_nodes("#players_per_game th a") %>% html_text()
+sos <- page %>% html_nodes("#players_per_game .right.iz+ .right") %>% html_text()
+sos <- as.numeric(sos[1])
+
+gsub("-iv$", "iv", "th-ivompson-iv")
+
+library(curl)
+read_html(curl('http://google.com', handle = curl::new_handle("useragent" = "Mozilla/5.0")))
+
+name <- gsub(",", "", name)
+
+x_data <- function(data) {
+  for (i in 1:13) {
+    n <- 1
+    name <- tolower(str_split(data$Player[i], "\\(")[[1]][1])
+    name <- substr(name, 1, nchar(name) - 1)
+    name <- chartr(" ", "-", name)
+    name <- gsub("\\.", "", name)
+    name <- gsub("\\'", "", name)
+    name <- gsub(",", "", name)
+    name <- gsub("-iv$", "iv", name)
+    name <- gsub("-jr$", "jr", name)
+    if (grepl("-ii", name)) {
+      name <- gsub("-ii", "ii", name)
+      name <- gsub("-iii", "iii", name)
+    }
+    year <- substr(str_split(data$Player[i], "\\(")[[1]][2], 1, 2)
+    link <- paste0("https://www.sports-reference.com/cbb/players/", name, "-", n, ".html")
+    page <- read_html(link)
+    year1 <- page %>% html_nodes("#players_per_game th a") %>% html_text()
+    year1 <- year1[1]
+    while (year != as.numeric(substr(year1, 6, 7))) {
+      n <- n + 1
+      link <- paste0("https://www.sports-reference.com/cbb/players/", name, "-", n, ".html")
+      page <- read_html(link)
+      year1 <- page %>% html_nodes("#players_per_game th a") %>% html_text()
+      year1 <- year1[1]
+    }
+    weight <- page %>% html_nodes("span+ span") %>% html_text()
+    weight <- as.numeric(substr(weight[3], 1, 3))
+    #conf <- page %>% html_nodes("#players_per_game td+ .left a") %>% html_text()
+    sos <- page %>% html_nodes("tbody .iz+ .right") %>% html_text()
+    sos <- as.numeric(sos[1])
+    if (sos == 0) {
+      sos <- page %>% html_nodes("tbody .iz+ .right") %>% html_text()
+      sos <- as.numeric(sos[4])
+    }
+    rsci1 <- page %>% html_nodes("p:nth-child(6)") %>% html_text()
+    rsci2 <- page %>% html_nodes("p:nth-child(5)") %>% html_text()
+    if (grepl("RSCI", rsci1[[1]][1])) {
+      rsci <- substr(str_split(rsci1[1], ": ")[[1]][2], 1, 3)
+      rsci <- gsub(" ", "", rsci)
+      rsci <- gsub("\\(", "", rsci)
+      rsci <- as.numeric(rsci)
+    } 
+    else if (grepl("RSCI", rsci2[[1]][1])) {
+      rsci <- substr(str_split(rsci2[1], ": ")[[1]][2], 1, 3)
+      rsci <- gsub(" ", "", rsci)
+      rsci <- gsub("\\(", "", rsci)
+      rsci <- as.numeric(rsci)
+    } 
+    else {
+      rsci <- 101
+    }
+    data$SOS[i] <- sos
+    data$RSCI[i] <- rsci
+    data$Weight[i] <- weight
+  }
+  data
+}
+
+head(x_data(train_data), 20)
+
+
+
+#try(xml2::read_html(link), silent = TRUE)
+link <- "https://www.sports-reference.com/cbb/awards/rsci-recruit-rankings-2009.html"
+page <- read_html(link)
+t_names <- page %>% html_nodes(".center+ .left") %>% html_text()
+t_rsci <- c(page %>% html_nodes("tbody .center:nth-child(1)") %>% html_text())
+t_rsci <- t_rsci[-c(21, 22, 43, 44, 65, 66, 87, 88)]
+t_rsci <- as.numeric(gsub("T", "", t_rsci))
+t_years <- c()
+for (i in 0:10) {
+  t_years <- c(t_years, rep(2009 + i, 100))
+}
+
+links <- paste0("https://www.sports-reference.com/cbb/awards/rsci-recruit-rankings-20", 10:19, ".", "html")
+for (i in 1:length(links)) {
+  page <- read_html(links[i])
+  names <- page %>% html_nodes(".center+ .left") %>% html_text()
+  t_names <- c(t_names, names)
+  rsci <- page %>% html_nodes("tbody .center:nth-child(1)") %>% html_text()
+  rsci <- rsci[-c(21, 22, 43, 44, 65, 66, 87, 88)]
+  rsci <- as.numeric(gsub("T", "", rsci))
+  t_rsci <- c(t_rsci, rsci)
+}
+
+link <- "https://www.sports-reference.com/cbb/awards/rsci-recruit-rankings-2022.html"
+page <- read_html(link)
+test_names <- page %>% html_nodes(".center+ .left") %>% html_text()
+test_rsci <- c(page %>% html_nodes("tbody .center:nth-child(1)") %>% html_text())
+test_rsci <- test_rsci[-c(21, 22, 43, 44, 65, 66, 87, 88)]
+test_rsci <- as.numeric(gsub("T", "", test_rsci))
+test_years <- rep(2023, 100)
+
+#get rid of NAs
+t_rsci <- t_rsci[!is.na(t_rsci)]
+t_years <- c(t_years[1:800], 2016, t_years[801:1000], 2018, t_years[1001:1100])
+
+#t_rsci <- t_rsci * (-1) + 101
+
+t_years <- t_years + 1
+t_names <- paste0(t_names, " (", substr(t_years, 3, 4), ")")
+
+df <- data.frame("Player" = t_names, "Year" = t_years, "RSCI" = t_rsci)
+
+df_test <- data.frame("Player" = test_names, "RSCI" = test_rsci)
+
+train_data <- left_join(train_data, df, by = c("Player", "Year"))
+test_data <- left_join(test_data, df_test, by = c("Player", "Year"))
+
+train_data$RSCI[3] <- 3
+train_data$RSCI[17] <- 23
+train_data$RSCI[25] <- 49
+train_data$RSCI[30] <- 41
+train_data$RSCI[32] <- 2
+train_data$RSCI[46] <- 7
+train_data$RSCI[52] <- 30
+train_data$RSCI[70] <- 20
+train_data$RSCI[120] <- 17
+train_data$RSCI[140] <- 28
+train_data$RSCI[165] <- 8
+train_data$RSCI[177] <- 63
+train_data$RSCI[196] <- 30
+train_data$RSCI[232] <- 38
+train_data$RSCI[272] <- 9
+train_data$RSCI[288] <- 74
+train_data$RSCI[377] <- 44
+train_data$RSCI[451] <- 81
+train_data$RSCI[490] <- 96
+
+test_data <- left_join(test_data, df_test, by = c("Player"))
+test_data
+
+
+
+train_data %>% filter(Player == "Jahii Carson")
+
+X_test$RSCI[is.na(X_test$RSCI)] <- 101
+X_train$RSCI[is.na(X_train$RSCI)] <- 101
+
+X_test$RSCI <- X_test$RSCI * (-1) + 101
+X_train$RSCI <- X_train$RSCI * (-1) + 101
+
+```
+
+
+
+```{r}
+
+
+head(train_data)
+
+name <- substr(name, 1, nchar(name) - 1)
+str_split(train_data$Player[1], "\\(")[[1]][2]
+
+
+
+n <- 1
+name <- tolower(str_split(train_data$Player[1], "\\(")[[1]][1])
+name <- substr(name, 1, nchar(name) - 1)
+name <- chartr(" ", "-", name)
+year <- substr(str_split(train_data$Player[1], "\\(")[[1]][2], 1, 2)
+link <- paste0("https://www.sports-reference.com/cbb/players/", name, "-", n, ".html")
+page2 <- read_html(link2)
+year1 <- page2 %>% html_nodes("#players_per_game th a") %>% html_text()
+weight <- page %>% html_nodes("span+ span") %>% html_text()
+weight <- weight[3]
+#conf_link <- paste0("players_per_game\\.", 20, year, " th a")
+conf <- page %>% html_nodes("#players_per_game td+ .left a") %>% html_text()
+
+link2 <- "https://www.sports-reference.com/cbb/players/desmond-bane-1.html"
+page2 <- read_html(link2)
+page %>% html_nodes(".iz+ .right") %>% html_text()
+rsci <- page %>% html_nodes("p:nth-child(6)") %>% html_text()
+rsci <- substr(str_split(rsci[1], ": ")[[1]][2], 1, 3)
+rsci <- gsub(" ", "", rsci)
+rsci <- gsub("\\(", "", rsci)
+rsci <- as.numeric(rsci)
+
+
+
+grepl("a", "apple")
+
+years <- page %>% html_nodes("#players_per_game tbody th") %>% html_text()
+#if (length(years) > 1)
+ year1 <- page %>% html_nodes("#players_per_game th a") %>% html_text()
+    weight <- page %>% html_nodes("span+ span") %>% html_text()
+    weight <- as.numeric(substr(weight[3], 1, 3))
+    conf <- page %>% html_nodes("#players_per_game td+ .left a") %>% html_text()
+    while (!(year == as.numeric(substr(year1, 6, 7)))) {
+      n <- n + 1
+      link <- paste0("https://www.sports-reference.com/cbb/players/", name, "-", n, ".html")
+      page <- read_html(link)
+      year1 <- page %>% html_nodes(".text-left a") %>% html_text()
+    }
+    sos <- page %>% html_nodes(paste0("players_per_game\.20", year, " .iz+ .right")) %>% html_text()
+    weight <- as.numeric(substr(weight, 1, 3))
+    rsci <- page %>% html_nodes("p:nth-child(6)") %>% html_text()
+    if (!(grepl(rsci, "RSCI"))) {
+      rsci <- 0
+    }
+    rsci <- as.numeric(rsci)
+    if (rsci != 0) {
+      rsci <- (-1 * rsci) + 101
+    }
+    sos <- as.numeric(sos)
+    
+
+
+
+#substr(paste0(players_per_game\.", "", 20, 16, " th a"))
+
+link1 <- "https://craftednba.com/player-traits/length"
+page1 <- read_html(link1)
+
+link2 <- "https://www.nba.com/stats/players/catch-shoot/?Season=2020-21&SeasonType=Regular%20Season&sort=GP&dir=1"
+page2 <- read_html(link2)
+name2 <- page2 %>% html_nodes(".player a") %>% html_text()
+
+name <- page1 %>% html_nodes(".text-left a") %>% html_text()
+plength <- page1 %>% html_nodes(".text-left+ td") %>% html_text()
+height <- page1 %>% html_nodes("td:nth-child(4)") %>% html_text()
+wingspan <- page1 %>% html_nodes("td:nth-child(5)") %>% html_text()
+
+      
+
+page <- read_html(link)
+names <- page %>% html_nodes(".center+ .left") %>% html_text()
+rsci <- page %>% html_nodes("tbody .center:nth-child(1)") %>% html_text()
+rsci <- rsci[-c(21, 22, 43, 44, 65, 66, 77, 78)]
+rsci <- as.numeric(gsub("T", "", rsci))
+```
+
+
+
+
+
+
