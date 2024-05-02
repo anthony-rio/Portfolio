@@ -1,0 +1,525 @@
+---
+title: "Rest of Draft Model"
+author: "Anthony Rio"
+date: "2023-11-29"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Sophomore Model
+```{r, include=FALSE, warning=FALSE}
+library(stringr)
+library(DT)
+library(tidyverse)
+train_data <- read.csv("Sophomore_Game_Data.csv")
+head(train_data)
+
+colnames(train_data)[c(6, 32, 35)] <- c("MIN", "X2PM", "X3PM")
+
+# fix CONF
+for (i in 1:nrow(train_data)) {
+  if (train_data$CONF[i] == "ACC" | train_data$CONF[i] == "B12" | train_data$CONF[i] == "P12" | train_data$CONF[i] == "SEC" | train_data$CONF[i] == "B10" | train_data$CONF[i] == "BE") {
+    train_data$CONF[i] <- 1
+    } else {
+      train_data$CONF[i] <- 0
+    }
+}
+train_data$CONF <- as.numeric(train_data$CONF)
+
+
+#fix height
+for (i in 1:nrow(train_data)) {
+  train_data$Height[i] <- as.numeric(str_split(train_data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(train_data$Height[i], "-")[[1]][2])
+}
+
+
+
+colnames(train_data)
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(train_data)) {
+  train_data$Dunks[i] <- as.numeric(str_split(train_data$Dunks[i], "-")[[1]][1])
+  train_data$C2M[i] <- as.numeric(str_split(train_data$C2M[i], "-")[[1]][1])
+  train_data$FTM[i] <- as.numeric(str_split(train_data$FTM[i], "-")[[1]][1])
+  train_data$F2M[i] <- as.numeric(str_split(train_data$F2M[i], "-")[[1]][1])
+  train_data$X2PM[i] <- as.numeric(str_split(train_data$X2PM[i], "-")[[1]][1])
+  train_data$X3PM[i] <- as.numeric(str_split(train_data$X3PM[i], "-")[[1]][1])
+}
+
+
+#fix drafted
+train_data$drafted <- train_data$Pick
+
+for (i in 1:nrow(train_data)) {
+  if (train_data$drafted[i] == "-") {
+    train_data$drafted[i] <- 0
+  } else {
+    train_data$drafted[i] <- 1
+  }
+}
+train_data$drafted <- as.numeric(train_data$drafted)
+train_data$Height <- as.numeric(train_data$Height)
+train_data$Dunks <- as.numeric(train_data$Dunks)
+train_data$C2M <- as.numeric(train_data$C2M)
+train_data$F2M <- as.numeric(train_data$F2M)
+train_data$FTM <- as.numeric(train_data$FTM)
+train_data$X2PM <- as.numeric(train_data$X2PM)
+train_data$X3PM <- as.numeric(train_data$X3PM)
+train_data$C2P <- as.numeric(train_data$C2P)
+train_data$F2P <- as.numeric(train_data$F2P)
+train_data$FTP <- as.numeric(train_data$FTP)
+train_data$X2PP <- as.numeric(train_data$X2PP)
+train_data$X3PP <- as.numeric(train_data$X3PP)
+train_data$X3PR <- as.numeric(train_data$X3PR)
+
+train_data$Dunks <- train_data$Dunks * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$C2M <- train_data$C2M * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$F2M <- train_data$F2M * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$FTM <- train_data$FTM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$X2PM <- train_data$X2PM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$X3PM <- train_data$X3PM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+```
+
+### Train Model
+```{r}
+log_model <- glm(drafted ~ Height + CONF + MIN + PRPG + DPRPG + BPM + OBPM + DBPM + ORTG + D.RTG + USG + EFG + TS + FC + OR + DR + AST + TO + BLK + STL + FTR + C2P + F2P + FTP + X2PP + X3PR + X3PP + Dunks + F2M + C2M + X3PM + FTM + X2PM, data = train_data, family = "binomial")
+```
+
+### Prepare 2023 Data
+```{r, include=FALSE, include=FALSE}
+test_data <- read.csv("Sophomore_2024_Data.csv")
+
+colnames(test_data)[c(3, 31, 34)] <- c("CONF", "X2PM", "X3PM")
+
+
+#fix CONF
+for (i in 1:nrow(test_data)) {
+  if (test_data$CONF[i] == "ACC" | test_data$CONF[i] == "B12" | test_data$CONF[i] == "P12" | test_data$CONF[i] == "SEC" | test_data$CONF[i] == "B10" | test_data$CONF[i] == "BE") {
+    test_data$CONF[i] <- 1
+    } else {
+      test_data$CONF[i] <- 0
+    }
+}
+test_data$CONF <- as.numeric(test_data$CONF)
+
+
+
+#fix height
+for (i in 1:nrow(test_data)) {
+  test_data$Height[i] <- as.numeric(str_split(test_data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(test_data$Height[i], "-")[[1]][2])
+}
+
+
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(test_data)) {
+  test_data$Dunks[i] <- as.numeric(str_split(test_data$Dunks[i], "-")[[1]][1])
+  test_data$C2M[i] <- as.numeric(str_split(test_data$C2M[i], "-")[[1]][1])
+  test_data$FTM[i] <- as.numeric(str_split(test_data$FTM[i], "-")[[1]][1])
+  test_data$F2M[i] <- as.numeric(str_split(test_data$F2M[i], "-")[[1]][1])
+  test_data$X2PM[i] <- as.numeric(str_split(test_data$X2PM[i], "-")[[1]][1])
+  test_data$X3PM[i] <- as.numeric(str_split(test_data$X3PM[i], "-")[[1]][1])
+}
+
+test_data$Height <- as.numeric(test_data$Height)
+test_data$Dunks <- as.numeric(test_data$Dunks)
+test_data$C2M <- as.numeric(test_data$C2M)
+test_data$F2M <- as.numeric(test_data$F2M)
+test_data$FTM <- as.numeric(test_data$FTM)
+test_data$X2PM <- as.numeric(test_data$X2PM)
+test_data$X3PM <- as.numeric(test_data$X3PM)
+
+test_data$Dunks <- test_data$Dunks * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$C2M <- test_data$C2M * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$F2M <- test_data$F2M * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$FTM <- test_data$FTM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$X2PM <- test_data$X2PM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$X3PM <- test_data$X3PM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+
+
+test_data$C2P <- as.numeric(test_data$C2P)
+test_data$F2P <- as.numeric(test_data$F2P)
+test_data$FTP <- as.numeric(test_data$FTP)
+test_data$X2PP <- as.numeric(test_data$X2PP)
+test_data$X3PP <- as.numeric(test_data$X3PP)
+test_data$X3PR <- as.numeric(test_data$X3PR)
+
+X_test <- test_data[ , c('Height', 'CONF', 'MIN', 'PRPG', 'DPRPG', 'BPM', 'OBPM', 'DBPM', 'ORTG', 'D.RTG', 'USG', 'EFG', 'TS', 'FC', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'F2P', 'FTP', 'X2PP', 'X3PR', 'X3PP', 'Dunks', 'F2M', 'C2M', 'X3PM', 'FTM', 'X2PM')]
+
+#X_test <- test_data[ , c('Height', 'CONF', 'MIN.', 'USG', 'TS', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'X3P', 'X3PP', 'Dunks', 'C2M')]
+
+
+# X_train <- train_data[ , c('Height', 'CONF', 'MIN', 'PRPG', 'DPRPG', 'BPM', 'OBPM', 'DBPM', 'ORTG', 'D.RTG', 'USG', 'EFG', 'TS', 'FC', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'F2P', 'FTP', 'X2PP', 'X3PR', 'X3PP', 'Dunks', 'F2M', 'C2M', 'X3PM', 'FTM', 'X2PM')]
+
+# Y_train <- train_data[ , 'drafted']
+```
+
+### Make Predictions
+```{r, include=FALSE}
+result <- data.frame("Player" = test_data$Player, "Prediction" = as.numeric(predict(log_model, X_test, type = "response") > 0.5))
+
+#predict(log_model, X_test, type = "response")
+
+drafted <- result[result$Prediction == 1, ]
+
+result_raw <- data.frame("Player" = test_data$Player, "Raw_Prediction" = predict(log_model, X_test, type = "response"))
+
+just_missed <- result_raw %>% filter(Raw_Prediction > 0.2 & Raw_Prediction < 0.5)
+
+raw <- result_raw %>% arrange(desc(Raw_Prediction)) %>% head(50)
+```
+
+## Sophomores Predicted To Be Drafted:
+```{r}
+datatable(drafted)
+```
+
+## Sophomores Who Just Missed the Cut:
+```{r}
+datatable(just_missed)
+```
+
+
+# Junior Model
+```{r, include=FALSE, warning=FALSE}
+train_data <- read.csv("Junior_Game_Data.csv")
+head(train_data)
+
+colnames(train_data)[c(6, 32, 35)] <- c("MIN", "X2PM", "X3PM")
+
+# fix CONF
+for (i in 1:nrow(train_data)) {
+  if (train_data$CONF[i] == "ACC" | train_data$CONF[i] == "B12" | train_data$CONF[i] == "P12" | train_data$CONF[i] == "SEC" | train_data$CONF[i] == "B10" | train_data$CONF[i] == "BE") {
+    train_data$CONF[i] <- 1
+    } else {
+      train_data$CONF[i] <- 0
+    }
+}
+train_data$CONF <- as.numeric(train_data$CONF)
+
+
+#fix height
+for (i in 1:nrow(train_data)) {
+  train_data$Height[i] <- as.numeric(str_split(train_data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(train_data$Height[i], "-")[[1]][2])
+}
+
+
+
+colnames(train_data)
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(train_data)) {
+  train_data$Dunks[i] <- as.numeric(str_split(train_data$Dunks[i], "-")[[1]][1])
+  train_data$C2M[i] <- as.numeric(str_split(train_data$C2M[i], "-")[[1]][1])
+  train_data$FTM[i] <- as.numeric(str_split(train_data$FTM[i], "-")[[1]][1])
+  train_data$F2M[i] <- as.numeric(str_split(train_data$F2M[i], "-")[[1]][1])
+  train_data$X2PM[i] <- as.numeric(str_split(train_data$X2PM[i], "-")[[1]][1])
+  train_data$X3PM[i] <- as.numeric(str_split(train_data$X3PM[i], "-")[[1]][1])
+}
+
+
+#fix drafted
+train_data$drafted <- train_data$Pick
+
+for (i in 1:nrow(train_data)) {
+  if (train_data$drafted[i] == "-") {
+    train_data$drafted[i] <- 0
+  } else {
+    train_data$drafted[i] <- 1
+  }
+}
+train_data$drafted <- as.numeric(train_data$drafted)
+train_data$Height <- as.numeric(train_data$Height)
+train_data$Dunks <- as.numeric(train_data$Dunks)
+train_data$C2M <- as.numeric(train_data$C2M)
+train_data$F2M <- as.numeric(train_data$F2M)
+train_data$FTM <- as.numeric(train_data$FTM)
+train_data$X2PM <- as.numeric(train_data$X2PM)
+train_data$X3PM <- as.numeric(train_data$X3PM)
+train_data$C2P <- as.numeric(train_data$C2P)
+train_data$F2P <- as.numeric(train_data$F2P)
+train_data$FTP <- as.numeric(train_data$FTP)
+train_data$X2PP <- as.numeric(train_data$X2PP)
+train_data$X3PP <- as.numeric(train_data$X3PP)
+train_data$X3PR <- as.numeric(train_data$X3PR)
+
+train_data$Dunks <- train_data$Dunks * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$C2M <- train_data$C2M * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$F2M <- train_data$F2M * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$FTM <- train_data$FTM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$X2PM <- train_data$X2PM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$X3PM <- train_data$X3PM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+
+
+
+log_model <- glm(drafted ~ Height + CONF + MIN + PRPG + DPRPG + BPM + OBPM + DBPM + ORTG + D.RTG + USG + EFG + TS + FC + OR + DR + AST + TO + BLK + STL + FTR + C2P + F2P + FTP + X2PP + X3PR + X3PP + Dunks + F2M + C2M + X3PM + FTM + X2PM, data = train_data, family = "binomial")
+```
+
+
+```{r, include=FALSE, warning=FALSE}
+test_data <- read.csv("Junior_2024_Data.csv")
+
+colnames(test_data)[c(3, 31, 34)] <- c("CONF", "X2PM", "X3PM")
+
+
+#fix CONF
+for (i in 1:nrow(test_data)) {
+  if (test_data$CONF[i] == "ACC" | test_data$CONF[i] == "B12" | test_data$CONF[i] == "P12" | test_data$CONF[i] == "SEC" | test_data$CONF[i] == "B10" | test_data$CONF[i] == "BE") {
+    test_data$CONF[i] <- 1
+    } else {
+      test_data$CONF[i] <- 0
+    }
+}
+test_data$CONF <- as.numeric(test_data$CONF)
+
+
+
+#fix height
+for (i in 1:nrow(test_data)) {
+  test_data$Height[i] <- as.numeric(str_split(test_data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(test_data$Height[i], "-")[[1]][2])
+}
+
+
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(test_data)) {
+  test_data$Dunks[i] <- as.numeric(str_split(test_data$Dunks[i], "-")[[1]][1])
+  test_data$C2M[i] <- as.numeric(str_split(test_data$C2M[i], "-")[[1]][1])
+  test_data$FTM[i] <- as.numeric(str_split(test_data$FTM[i], "-")[[1]][1])
+  test_data$F2M[i] <- as.numeric(str_split(test_data$F2M[i], "-")[[1]][1])
+  test_data$X2PM[i] <- as.numeric(str_split(test_data$X2PM[i], "-")[[1]][1])
+  test_data$X3PM[i] <- as.numeric(str_split(test_data$X3PM[i], "-")[[1]][1])
+}
+
+test_data$Height <- as.numeric(test_data$Height)
+test_data$Dunks <- as.numeric(test_data$Dunks)
+test_data$C2M <- as.numeric(test_data$C2M)
+test_data$F2M <- as.numeric(test_data$F2M)
+test_data$FTM <- as.numeric(test_data$FTM)
+test_data$X2PM <- as.numeric(test_data$X2PM)
+test_data$X3PM <- as.numeric(test_data$X3PM)
+
+test_data$Dunks <- test_data$Dunks * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$C2M <- test_data$C2M * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$F2M <- test_data$F2M * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$FTM <- test_data$FTM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$X2PM <- test_data$X2PM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$X3PM <- test_data$X3PM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+
+
+test_data$C2P <- as.numeric(test_data$C2P)
+test_data$F2P <- as.numeric(test_data$F2P)
+test_data$FTP <- as.numeric(test_data$FTP)
+test_data$X2PP <- as.numeric(test_data$X2PP)
+test_data$X3PP <- as.numeric(test_data$X3PP)
+test_data$X3PR <- as.numeric(test_data$X3PR)
+
+
+#write.csv(test_data, "~/Desktop/R_Projects/draft_test_data.csv")
+X_test <- test_data[ , c('Height', 'CONF', 'MIN', 'PRPG', 'DPRPG', 'BPM', 'OBPM', 'DBPM', 'ORTG', 'D.RTG', 'USG', 'EFG', 'TS', 'FC', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'F2P', 'FTP', 'X2PP', 'X3PR', 'X3PP', 'Dunks', 'F2M', 'C2M', 'X3PM', 'FTM', 'X2PM')]
+
+#X_test <- test_data[ , c('Height', 'CONF', 'MIN.', 'USG', 'TS', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'X3P', 'X3PP', 'Dunks', 'C2M')]
+
+
+# X_train <- train_data[ , c('Height', 'CONF', 'MIN', 'PRPG', 'DPRPG', 'BPM', 'OBPM', 'DBPM', 'ORTG', 'D.RTG', 'USG', 'EFG', 'TS', 'FC', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'F2P', 'FTP', 'X2PP', 'X3PR', 'X3PP', 'Dunks', 'F2M', 'C2M', 'X3PM', 'FTM', 'X2PM')]
+
+# Y_train <- train_data[ , 'drafted']
+```
+
+
+```{r, include=FALSE}
+result <- data.frame("Player" = test_data$Player, "Prediction" = as.numeric(predict(log_model, X_test, type = "response") > 0.5))
+
+#predict(log_model, X_test, type = "response")
+
+drafted <- result[result$Prediction == 1, ]
+
+result_raw <- data.frame("Player" = test_data$Player, "Raw_Prediction" = predict(log_model, X_test, type = "response"))
+
+just_missed <- result_raw %>% filter(Raw_Prediction > 0.2 & Raw_Prediction < 0.5)
+
+raw <- result_raw %>% arrange(desc(Raw_Prediction)) %>% head(50)
+```
+
+## Juniors Predicted To Be Drafted:
+```{r}
+datatable(drafted)
+```
+
+## Juniors Who Just Missed the Cut:
+```{r}
+datatable(just_missed)
+```
+
+# Senior Model
+
+### Note: This model seemed the worst just based on its prediction output and high number of projected senior draftees. 
+
+```{r, include=FALSE, warning=FALSE}
+train_data <- read.csv("Senior_Game_Data.csv")
+head(train_data)
+
+colnames(train_data)[c(6, 32, 35)] <- c("MIN", "X2PM", "X3PM")
+
+# fix CONF
+for (i in 1:nrow(train_data)) {
+  if (train_data$CONF[i] == "ACC" | train_data$CONF[i] == "B12" | train_data$CONF[i] == "P12" | train_data$CONF[i] == "SEC" | train_data$CONF[i] == "B10" | train_data$CONF[i] == "BE") {
+    train_data$CONF[i] <- 1
+    } else {
+      train_data$CONF[i] <- 0
+    }
+}
+train_data$CONF <- as.numeric(train_data$CONF)
+
+
+#fix height
+for (i in 1:nrow(train_data)) {
+  train_data$Height[i] <- as.numeric(str_split(train_data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(train_data$Height[i], "-")[[1]][2])
+}
+
+
+
+colnames(train_data)
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(train_data)) {
+  train_data$Dunks[i] <- as.numeric(str_split(train_data$Dunks[i], "-")[[1]][1])
+  train_data$C2M[i] <- as.numeric(str_split(train_data$C2M[i], "-")[[1]][1])
+  train_data$FTM[i] <- as.numeric(str_split(train_data$FTM[i], "-")[[1]][1])
+  train_data$F2M[i] <- as.numeric(str_split(train_data$F2M[i], "-")[[1]][1])
+  train_data$X2PM[i] <- as.numeric(str_split(train_data$X2PM[i], "-")[[1]][1])
+  train_data$X3PM[i] <- as.numeric(str_split(train_data$X3PM[i], "-")[[1]][1])
+}
+
+
+#fix drafted
+train_data$drafted <- train_data$Pick
+
+for (i in 1:nrow(train_data)) {
+  if (train_data$drafted[i] == "-") {
+    train_data$drafted[i] <- 0
+  } else {
+    train_data$drafted[i] <- 1
+  }
+}
+train_data$drafted <- as.numeric(train_data$drafted)
+train_data$Height <- as.numeric(train_data$Height)
+train_data$Dunks <- as.numeric(train_data$Dunks)
+train_data$C2M <- as.numeric(train_data$C2M)
+train_data$F2M <- as.numeric(train_data$F2M)
+train_data$FTM <- as.numeric(train_data$FTM)
+train_data$X2PM <- as.numeric(train_data$X2PM)
+train_data$X3PM <- as.numeric(train_data$X3PM)
+train_data$C2P <- as.numeric(train_data$C2P)
+train_data$F2P <- as.numeric(train_data$F2P)
+train_data$FTP <- as.numeric(train_data$FTP)
+train_data$X2PP <- as.numeric(train_data$X2PP)
+train_data$X3PP <- as.numeric(train_data$X3PP)
+train_data$X3PR <- as.numeric(train_data$X3PR)
+
+train_data$Dunks <- train_data$Dunks * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$C2M <- train_data$C2M * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$F2M <- train_data$F2M * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$FTM <- train_data$FTM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$X2PM <- train_data$X2PM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+train_data$X3PM <- train_data$X3PM * 40 / (train_data$MIN / 100 * train_data$Games * 40)
+
+
+
+log_model <- glm(drafted ~ Height + CONF + MIN + PRPG + DPRPG + BPM + OBPM + DBPM + ORTG + D.RTG + USG + EFG + TS + FC + OR + DR + AST + TO + BLK + STL + FTR + C2P + F2P + FTP + X2PP + X3PR + X3PP + Dunks + F2M + C2M + X3PM + FTM + X2PM, data = train_data, family = "binomial")
+```
+
+```{r, include=FALSE, warning=FALSE}
+
+test_data <- read.csv("Senior_2024_Data.csv")
+
+colnames(test_data)[c(3, 31, 34)] <- c("CONF", "X2PM", "X3PM")
+
+
+#fix CONF
+for (i in 1:nrow(test_data)) {
+  if (test_data$CONF[i] == "ACC" | test_data$CONF[i] == "B12" | test_data$CONF[i] == "P12" | test_data$CONF[i] == "SEC" | test_data$CONF[i] == "B10" | test_data$CONF[i] == "BE") {
+    test_data$CONF[i] <- 1
+    } else {
+      test_data$CONF[i] <- 0
+    }
+}
+test_data$CONF <- as.numeric(test_data$CONF)
+
+
+
+#fix height
+for (i in 1:nrow(test_data)) {
+  test_data$Height[i] <- as.numeric(str_split(test_data$Height[i], "-")[[1]][1]) * 12 + as.numeric(str_split(test_data$Height[i], "-")[[1]][2])
+}
+
+
+#Fix Dunks, C2M, FTM, F2M, 2PM., X3PM.
+for (i in 1:nrow(test_data)) {
+  test_data$Dunks[i] <- as.numeric(str_split(test_data$Dunks[i], "-")[[1]][1])
+  test_data$C2M[i] <- as.numeric(str_split(test_data$C2M[i], "-")[[1]][1])
+  test_data$FTM[i] <- as.numeric(str_split(test_data$FTM[i], "-")[[1]][1])
+  test_data$F2M[i] <- as.numeric(str_split(test_data$F2M[i], "-")[[1]][1])
+  test_data$X2PM[i] <- as.numeric(str_split(test_data$X2PM[i], "-")[[1]][1])
+  test_data$X3PM[i] <- as.numeric(str_split(test_data$X3PM[i], "-")[[1]][1])
+}
+
+test_data$Height <- as.numeric(test_data$Height)
+test_data$Dunks <- as.numeric(test_data$Dunks)
+test_data$C2M <- as.numeric(test_data$C2M)
+test_data$F2M <- as.numeric(test_data$F2M)
+test_data$FTM <- as.numeric(test_data$FTM)
+test_data$X2PM <- as.numeric(test_data$X2PM)
+test_data$X3PM <- as.numeric(test_data$X3PM)
+
+test_data$Dunks <- test_data$Dunks * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$C2M <- test_data$C2M * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$F2M <- test_data$F2M * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$FTM <- test_data$FTM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$X2PM <- test_data$X2PM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+test_data$X3PM <- test_data$X3PM * 40 / (test_data$MIN / 100 * test_data$Games * 40)
+
+
+test_data$C2P <- as.numeric(test_data$C2P)
+test_data$F2P <- as.numeric(test_data$F2P)
+test_data$FTP <- as.numeric(test_data$FTP)
+test_data$X2PP <- as.numeric(test_data$X2PP)
+test_data$X3PP <- as.numeric(test_data$X3PP)
+test_data$X3PR <- as.numeric(test_data$X3PR)
+
+
+#write.csv(test_data, "~/Desktop/R_Projects/draft_test_data.csv")
+X_test <- test_data[ , c('Height', 'CONF', 'MIN', 'PRPG', 'DPRPG', 'BPM', 'OBPM', 'DBPM', 'ORTG', 'D.RTG', 'USG', 'EFG', 'TS', 'FC', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'F2P', 'FTP', 'X2PP', 'X3PR', 'X3PP', 'Dunks', 'F2M', 'C2M', 'X3PM', 'FTM', 'X2PM')]
+
+#X_test <- test_data[ , c('Height', 'CONF', 'MIN.', 'USG', 'TS', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'X3P', 'X3PP', 'Dunks', 'C2M')]
+
+
+# X_train <- train_data[ , c('Height', 'CONF', 'MIN', 'PRPG', 'DPRPG', 'BPM', 'OBPM', 'DBPM', 'ORTG', 'D.RTG', 'USG', 'EFG', 'TS', 'FC', 'OR', 'DR', 'AST', 'TO', 'BLK', 'STL', 'FTR', 'C2P', 'F2P', 'FTP', 'X2PP', 'X3PR', 'X3PP', 'Dunks', 'F2M', 'C2M', 'X3PM', 'FTM', 'X2PM')]
+
+# Y_train <- train_data[ , 'drafted']
+```
+
+
+```{r, include=FALSE}
+result <- data.frame("Player" = test_data$Player, "Prediction" = as.numeric(predict(log_model, X_test, type = "response") > 0.5))
+
+#predict(log_model, X_test, type = "response")
+
+drafted <- result[result$Prediction == 1, ]
+
+result_raw <- data.frame("Player" = test_data$Player, "Raw_Prediction" = predict(log_model, X_test, type = "response"))
+
+just_missed <- result_raw %>% filter(Raw_Prediction > 0.2 & Raw_Prediction < 0.5)
+
+raw <- result_raw %>% arrange(desc(Raw_Prediction)) %>% head(50)
+```
+
+## Seniors Predicted To Be Drafted:
+```{r}
+datatable(drafted)
+```
+
+## Seniors Who Just Missed the Cut:
+```{r}
+datatable(just_missed)
+```
